@@ -18,13 +18,13 @@ dashboard_bp = Blueprint("dashboard", __name__)
 def dashboard():
     user_id = session.get("user_id")
     lang = session.get("language", "en")
-    
+
     user = {"username": session.get("username", "Farmer")}
     recent_crops = []
     recent_diseases = []
     total_crop_count = 0
     total_disease_count = 0
-    
+
     try:
         if is_db_connected():
             if user_id:
@@ -55,12 +55,18 @@ def dashboard():
         crop_raw = c.get("recommended_crop", "")
         c_info = get_crop_translation(crop_raw, lang)
         c["localized_crop"] = c_info.get("name", crop_raw.title())
+        if c.get("confidence") not in (None, ""):
+            try:
+                c["confidence"] = round(float(c["confidence"]), 2)
+            except (ValueError, TypeError):
+                pass
 
-    # Localize disease names
+    # Localize disease names and treatment text (used by the per-row PDF report)
     for d in recent_diseases:
         disease_raw = d.get("disease_name", "")
         d_info = get_disease_translation(disease_raw, lang)
         d["localized_disease"] = d_info.get("name", disease_raw)
+        d["localized_solution"] = d_info.get("treatment", d.get("solution", ""))
         try:
             d["confidence"] = round(float(d.get("confidence", 0)), 2)
         except (ValueError, TypeError):
@@ -84,7 +90,7 @@ def dashboard():
 def history():
     user_id = session.get("user_id")
     lang = session.get("language", "en")
-    
+
     all_crops = []
     all_diseases = []
 

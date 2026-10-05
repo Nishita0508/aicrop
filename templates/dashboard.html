@@ -2,148 +2,381 @@
 {% block title %}{{ t('nav_dashboard') }} - {{ t('app_name') }}{% endblock %}
 
 {% block content %}
-<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-    <div>
-        <h2 class="fw-bold mb-1">{{ t('welcome') }}, {{ user.username }} 👋</h2>
-        <p class="text-secondary small mb-0">Here is your agricultural AI diagnostic and recommendation summary.</p>
-    </div>
-    <div class="d-flex gap-2">
-        <a href="{{ url_for('crop.predict_crop_route') }}" class="btn-agri-primary py-2 px-3 small">
-            <span>🌾</span> {{ t('btn_predict_crop') }}
-        </a>
-        <a href="{{ url_for('disease.predict_disease_route') }}" class="btn-agri-outline py-2 px-3 small">
-            <span>🍃</span> {{ t('btn_predict_disease') }}
-        </a>
-    </div>
-</div>
+<div id="dashboard-content">
 
-<!-- Key Activity Stats Grid -->
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-icon-wrap text-success">📈</div>
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
         <div>
-            <div class="stat-number">{{ total_predictions }}</div>
-            <div class="stat-label">{{ t('stat_total_predictions') }}</div>
+            <h2 class="fw-bold mb-1">{{ t('welcome') }}, {{ user.username }} 👋</h2>
+            <p class="text-secondary small mb-0">Here is your agricultural AI diagnostic and recommendation summary.</p>
+        </div>
+        <div class="d-flex gap-2" data-html2canvas-ignore="true">
+            <button type="button" id="pdf-btn" onclick="downloadPDF()" class="btn-agri-outline py-2 px-3 small">
+                <span>📄</span> Download PDF
+            </button>
+            <a href="{{ url_for('crop.predict_crop_route') }}" class="btn-agri-primary py-2 px-3 small">
+                <span>🌾</span> {{ t('btn_predict_crop') }}
+            </a>
+            <a href="{{ url_for('disease.predict_disease_route') }}" class="btn-agri-outline py-2 px-3 small">
+                <span>🍃</span> {{ t('btn_predict_disease') }}
+            </a>
         </div>
     </div>
-    <div class="stat-card">
-        <div class="stat-icon-wrap text-warning">🌾</div>
-        <div>
-            <div class="stat-number">{{ total_crop_count }}</div>
-            <div class="stat-label">{{ t('stat_crop_count') }}</div>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon-wrap text-info">🍃</div>
-        <div>
-            <div class="stat-number">{{ total_disease_count }}</div>
-            <div class="stat-label">{{ t('stat_disease_count') }}</div>
-        </div>
-    </div>
-</div>
 
-<!-- Recent Predictions Row -->
-<div class="row g-4">
-    <!-- Recent Crop Recommendations -->
-    <div class="col-lg-6">
-        <div class="glass-panel h-100">
-            <div class="panel-header">
-                <h5 class="panel-title"><span>🌾</span> {{ t('recent_crops_title') }}</h5>
-                <a href="{{ url_for('dashboard.history') }}" class="small text-success">{{ t('btn_view_history') }} &rarr;</a>
+    <!-- Key Activity Stats Grid -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon-wrap text-success">📈</div>
+            <div>
+                <div class="stat-number">{{ total_predictions }}</div>
+                <div class="stat-label">{{ t('stat_total_predictions') }}</div>
             </div>
-            <div class="panel-body">
-                {% if recent_crops %}
-                <div class="table-responsive">
-                    <table class="agri-table">
-                        <thead>
-                            <tr>
-                                <th>{{ t('table_date') }}</th>
-                                <th>{{ t('table_crop') }}</th>
-                                <th>{{ t('table_confidence') }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in recent_crops %}
-                            <tr>
-                                <td>{{ item.created_at.strftime('%Y-%m-%d %H:%M') if item.created_at else 'Recent' }}</td>
-                                <td>
-                                    <span class="fw-bold text-light">{{ item.localized_crop or item.recommended_crop }}</span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">
-                                        {{ item.confidence or '99+' }}%
-                                    </span>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <div class="text-center py-4">
-                    <p class="text-secondary small mb-3">{{ t('no_crops_yet') }}</p>
-                    <a href="{{ url_for('crop.predict_crop_route') }}" class="btn-agri-outline py-2 px-3 small">
-                        <span>🌾</span> {{ t('btn_predict_crop') }}
-                    </a>
-                </div>
-                {% endif %}
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon-wrap text-warning">🌾</div>
+            <div>
+                <div class="stat-number">{{ total_crop_count }}</div>
+                <div class="stat-label">{{ t('stat_crop_count') }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon-wrap text-info">🍃</div>
+            <div>
+                <div class="stat-number">{{ total_disease_count }}</div>
+                <div class="stat-label">{{ t('stat_disease_count') }}</div>
             </div>
         </div>
     </div>
 
-    <!-- Recent Disease Diagnoses -->
-    <div class="col-lg-6">
-        <div class="glass-panel h-100">
-            <div class="panel-header">
-                <h5 class="panel-title"><span>🍃</span> {{ t('recent_diseases_title') }}</h5>
-                <a href="{{ url_for('dashboard.history') }}" class="small text-success">{{ t('btn_view_history') }} &rarr;</a>
+    <!-- Recent Predictions Row -->
+    <div class="row g-4">
+        <!-- Recent Crop Recommendations -->
+        <div class="col-lg-6">
+            <div class="glass-panel h-100">
+                <div class="panel-header">
+                    <h5 class="panel-title"><span>🌾</span> {{ t('recent_crops_title') }}</h5>
+                    <a href="{{ url_for('dashboard.history') }}" class="small text-success" data-html2canvas-ignore="true">{{ t('btn_view_history') }} &rarr;</a>
+                </div>
+                <div class="panel-body">
+                    {% if recent_crops %}
+                    <div class="table-responsive">
+                        <table class="agri-table">
+                            <thead>
+                                <tr>
+                                    <th>{{ t('table_date') }}</th>
+                                    <th>{{ t('table_crop') }}</th>
+                                    <th>{{ t('table_confidence') }}</th>
+                                    <th data-html2canvas-ignore="true"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in recent_crops %}
+                                <tr>
+                                    <td>{{ item.created_at.strftime('%Y-%m-%d %H:%M') if item.created_at else 'Recent' }}</td>
+                                    <td>
+                                        <span class="fw-bold text-light">{{ item.localized_crop or item.recommended_crop }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">
+                                            {{ item.confidence or '99+' }}%
+                                        </span>
+                                    </td>
+                                    <td data-html2canvas-ignore="true">
+                                        <button type="button" class="btn-agri-outline py-1 px-2" style="font-size:0.75rem;"
+                                            title="Download PDF" onclick="downloadRecordPDF(this)"
+                                            data-type="crop"
+                                            data-date="{{ item.created_at.strftime('%Y-%m-%d %H:%M') if item.created_at else '' }}"
+                                            data-name="{{ item.localized_crop or item.recommended_crop }}"
+                                            data-confidence="{{ item.confidence or '99+' }}"
+                                            data-n="{{ item.inputs.N if item.inputs else '' }}"
+                                            data-p="{{ item.inputs.P if item.inputs else '' }}"
+                                            data-k="{{ item.inputs.K if item.inputs else '' }}"
+                                            data-temp="{{ item.inputs.temperature if item.inputs else '' }}"
+                                            data-humidity="{{ item.inputs.humidity if item.inputs else '' }}"
+                                            data-ph="{{ item.inputs.ph if item.inputs else '' }}"
+                                            data-rain="{{ item.inputs.rainfall if item.inputs else '' }}">
+                                            📄
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <p class="text-secondary small mb-3">{{ t('no_crops_yet') }}</p>
+                        <a href="{{ url_for('crop.predict_crop_route') }}" class="btn-agri-outline py-2 px-3 small" data-html2canvas-ignore="true">
+                            <span>🌾</span> {{ t('btn_predict_crop') }}
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
-            <div class="panel-body">
-                {% if recent_diseases %}
-                <div class="table-responsive">
-                    <table class="agri-table">
-                        <thead>
-                            <tr>
-                                <th>{{ t('table_date') }}</th>
-                                <th>{{ t('table_image') }}</th>
-                                <th>{{ t('table_disease') }}</th>
-                                <th>{{ t('table_confidence') }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in recent_diseases %}
-                            <tr>
-                                <td>{{ item.created_at.strftime('%Y-%m-%d %H:%M') if item.created_at else 'Recent' }}</td>
-                                <td>
-                                    {% if item.image_filename %}
-                                    <img src="{{ url_for('uploaded_file', filename=item.image_filename) }}" width="42" height="42" class="rounded-2 border border-secondary border-opacity-25" style="object-fit: cover;" alt="Leaf">
-                                    {% else %}
-                                    🍃
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <span class="fw-bold text-light">{{ item.localized_disease or item.disease_name }}</span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-info bg-opacity-25 text-info border border-info border-opacity-25">
-                                        {{ item.confidence }}%
-                                    </span>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+        </div>
+
+        <!-- Recent Disease Diagnoses -->
+        <div class="col-lg-6">
+            <div class="glass-panel h-100">
+                <div class="panel-header">
+                    <h5 class="panel-title"><span>🍃</span> {{ t('recent_diseases_title') }}</h5>
+                    <a href="{{ url_for('dashboard.history') }}" class="small text-success" data-html2canvas-ignore="true">{{ t('btn_view_history') }} &rarr;</a>
                 </div>
-                {% else %}
-                <div class="text-center py-4">
-                    <p class="text-secondary small mb-3">{{ t('no_diseases_yet') }}</p>
-                    <a href="{{ url_for('disease.predict_disease_route') }}" class="btn-agri-outline py-2 px-3 small">
-                        <span>🍃</span> {{ t('btn_predict_disease') }}
-                    </a>
+                <div class="panel-body">
+                    {% if recent_diseases %}
+                    <div class="table-responsive">
+                        <table class="agri-table">
+                            <thead>
+                                <tr>
+                                    <th>{{ t('table_date') }}</th>
+                                    <th>{{ t('table_image') }}</th>
+                                    <th>{{ t('table_disease') }}</th>
+                                    <th>{{ t('table_confidence') }}</th>
+                                    <th data-html2canvas-ignore="true"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in recent_diseases %}
+                                <tr>
+                                    <td>{{ item.created_at.strftime('%Y-%m-%d %H:%M') if item.created_at else 'Recent' }}</td>
+                                    <td>
+                                        {% if item.image_filename %}
+                                        <img src="{{ url_for('uploaded_file', filename=item.image_filename) }}" width="42" height="42" class="rounded-2 border border-secondary border-opacity-25" style="object-fit: cover;" alt="Leaf">
+                                        {% else %}
+                                        🍃
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold text-light">{{ item.localized_disease or item.disease_name }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info bg-opacity-25 text-info border border-info border-opacity-25">
+                                            {{ item.confidence }}%
+                                        </span>
+                                    </td>
+                                    <td data-html2canvas-ignore="true">
+                                        <button type="button" class="btn-agri-outline py-1 px-2" style="font-size:0.75rem;"
+                                            title="Download PDF" onclick="downloadRecordPDF(this)"
+                                            data-type="disease"
+                                            data-date="{{ item.created_at.strftime('%Y-%m-%d %H:%M') if item.created_at else '' }}"
+                                            data-name="{{ item.localized_disease or item.disease_name }}"
+                                            data-confidence="{{ item.confidence }}"
+                                            data-solution="{{ item.localized_solution or '' }}"
+                                            data-img="{{ url_for('uploaded_file', filename=item.image_filename) if item.image_filename else '' }}">
+                                            📄
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <p class="text-secondary small mb-3">{{ t('no_diseases_yet') }}</p>
+                        <a href="{{ url_for('disease.predict_disease_route') }}" class="btn-agri-outline py-2 px-3 small" data-html2canvas-ignore="true">
+                            <span>🍃</span> {{ t('btn_predict_disease') }}
+                        </a>
+                    </div>
+                    {% endif %}
                 </div>
-                {% endif %}
             </div>
         </div>
     </div>
-</div>
+
+</div> <!-- /#dashboard-content -->
+
+<!-- PDF export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+const FALLBACK_BG = "#0f1714"; // change to match your theme's dark background
+
+const REPORT_LABELS = {
+  date: {{ t('table_date')|tojson }},
+  crop: {{ t('table_crop')|tojson }},
+  disease: {{ t('table_disease')|tojson }},
+  confidence: {{ t('table_confidence')|tojson }},
+  solution: {{ t('table_solution')|tojson }},
+  app: {{ t('app_name')|tojson }},
+};
+
+/* ───────────── Full dashboard PDF (top button) ───────────── */
+
+function resolveBackground() {
+  let bg = getComputedStyle(document.body).backgroundColor;
+  if (!bg || bg === "transparent" || /rgba\(.*,\s*0\)$/.test(bg)) {
+    bg = FALLBACK_BG;
+  }
+  const probe = document.createElement("canvas").getContext("2d");
+  probe.fillStyle = bg;
+  const hex = probe.fillStyle; // normalised to #rrggbb
+  const n = parseInt(hex.slice(1), 16);
+  return { css: hex, rgb: [(n >> 16) & 255, (n >> 8) & 255, n & 255] };
+}
+
+async function downloadPDF() {
+  const btn = document.getElementById("pdf-btn");
+  const originalHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = "<span>⏳</span> Generating...";
+
+  try {
+    const el = document.getElementById("dashboard-content");
+    const bg = resolveBackground();
+
+    const canvas = await html2canvas(el, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: bg.css,
+      windowWidth: 1400, // render at desktop width so dates don't wrap
+    });
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 8; // mm
+    const imgW = pageW - margin * 2;
+    const imgH = (canvas.height * imgW) / canvas.width;
+    const img = canvas.toDataURL("image/png");
+
+    const paintPage = (yOffset) => {
+      pdf.setFillColor(bg.rgb[0], bg.rgb[1], bg.rgb[2]);
+      pdf.rect(0, 0, pageW, pageH, "F");
+      pdf.addImage(img, "PNG", margin, yOffset, imgW, imgH);
+    };
+
+    const usableH = pageH - margin * 2;
+    let heightLeft = imgH;
+    let position = margin;
+
+    paintPage(position);
+    heightLeft -= usableH;
+
+    while (heightLeft > 0) {
+      position -= usableH;
+      pdf.addPage();
+      paintPage(position);
+      heightLeft -= usableH;
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    pdf.save("agriai-dashboard-" + today + ".pdf");
+  } catch (err) {
+    console.error("PDF export failed:", err);
+    alert("Could not generate the PDF. Please try again.");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalHTML;
+  }
+}
+
+/* ───────────── Single prediction report (per-row button) ───────────── */
+
+function mk(tag, css, text) {
+  const e = document.createElement(tag);
+  if (css) e.style.cssText = css;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+function addReportRow(table, label, value) {
+  if (value === undefined || value === null || value === "") return;
+  const tr = mk("tr");
+  tr.appendChild(mk("td", "padding:9px 12px;border-bottom:1px solid #e5e7eb;color:#6b7280;width:38%;", label));
+  tr.appendChild(mk("td", "padding:9px 12px;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;", value));
+  table.appendChild(tr);
+}
+
+async function downloadRecordPDF(btn) {
+  const d = btn.dataset;
+  const originalHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = "⏳";
+  let wrap;
+
+  try {
+    // Off-screen, light-themed report card
+    wrap = mk("div",
+      "position:absolute;left:-10000px;top:0;width:794px;background:#ffffff;color:#111827;" +
+      "padding:40px;box-sizing:border-box;line-height:1.5;");
+
+    // Header
+    const head = mk("div", "border-bottom:3px solid #16a34a;padding-bottom:14px;margin-bottom:22px;");
+    head.appendChild(mk("div", "font-size:26px;font-weight:800;color:#16a34a;", "🌱 " + REPORT_LABELS.app));
+    head.appendChild(mk("div", "font-size:18px;font-weight:600;margin-top:4px;",
+      d.type === "crop" ? "Crop Recommendation Report" : "Leaf Disease Report"));
+    wrap.appendChild(head);
+
+    const table = mk("table", "width:100%;border-collapse:collapse;font-size:15px;margin-bottom:18px;");
+
+    if (d.type === "crop") {
+      addReportRow(table, REPORT_LABELS.date, d.date);
+      addReportRow(table, REPORT_LABELS.crop, d.name);
+      addReportRow(table, REPORT_LABELS.confidence, d.confidence + "%");
+      wrap.appendChild(table);
+
+      const inputs = mk("table", "width:100%;border-collapse:collapse;font-size:15px;");
+      addReportRow(inputs, "Nitrogen (N)", d.n);
+      addReportRow(inputs, "Phosphorus (P)", d.p);
+      addReportRow(inputs, "Potassium (K)", d.k);
+      addReportRow(inputs, "Temperature (°C)", d.temp);
+      addReportRow(inputs, "Humidity (%)", d.humidity);
+      addReportRow(inputs, "pH", d.ph);
+      addReportRow(inputs, "Rainfall (mm)", d.rain);
+      if (inputs.children.length) {
+        wrap.appendChild(mk("div", "font-size:16px;font-weight:700;margin:6px 0 8px;", "Soil & climate inputs"));
+        wrap.appendChild(inputs);
+      }
+    } else {
+      if (d.img) {
+        const img = mk("img", "width:220px;height:220px;object-fit:cover;border-radius:10px;border:1px solid #d1d5db;margin-bottom:18px;display:block;");
+        img.crossOrigin = "anonymous";
+        await new Promise((res) => { img.onload = img.onerror = res; img.src = d.img; });
+        wrap.appendChild(img);
+      }
+      addReportRow(table, REPORT_LABELS.date, d.date);
+      addReportRow(table, REPORT_LABELS.disease, d.name);
+      addReportRow(table, REPORT_LABELS.confidence, d.confidence + "%");
+      wrap.appendChild(table);
+
+      if (d.solution) {
+        wrap.appendChild(mk("div", "font-size:16px;font-weight:700;margin:6px 0 8px;", REPORT_LABELS.solution));
+        wrap.appendChild(mk("div", "font-size:15px;color:#374151;background:#f3f4f6;padding:14px;border-radius:8px;white-space:pre-wrap;", d.solution));
+      }
+    }
+
+    wrap.appendChild(mk("div", "margin-top:28px;font-size:12px;color:#9ca3af;",
+      "Generated on " + new Date().toLocaleString() + " by " + REPORT_LABELS.app));
+
+    document.body.appendChild(wrap);
+
+    const canvas = await html2canvas(wrap, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+
+    // Fit onto a single A4 page
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 8;
+    let w = pageW - margin * 2;
+    let h = (canvas.height * w) / canvas.width;
+    if (h > pageH - margin * 2) {            // too tall: shrink to fit
+      h = pageH - margin * 2;
+      w = (canvas.width * h) / canvas.height;
+    }
+    pdf.addImage(canvas.toDataURL("image/png"), "PNG", margin, margin, w, h);
+
+    const stamp = (d.date || "").replace(/\D/g, "") || Date.now();
+    pdf.save("agriai-" + d.type + "-" + stamp + ".pdf");
+  } catch (err) {
+    console.error("Record PDF failed:", err);
+    alert("Could not generate the PDF. Please try again.");
+  } finally {
+    if (wrap) wrap.remove();
+    btn.disabled = false;
+    btn.innerHTML = originalHTML;
+  }
+}
+</script>
 {% endblock %}
