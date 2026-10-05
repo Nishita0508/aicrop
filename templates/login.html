@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_login') }} - {{ t('app_name') }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-md-6 col-lg-5">
+        <div class="glass-panel p-4 p-md-5">
+            <div class="text-center mb-4">
+                <span class="fs-1 d-block mb-2">🔑</span>
+                <h3 class="fw-bold mb-1">{{ t('nav_login') }}</h3>
+                <p class="text-secondary small mb-0">{{ t('auth_login_prompt') }}</p>
+            </div>
+
+            <form method="POST" action="{{ url_for('auth.login') }}">
+                <div class="mb-3">
+                    <label class="input-label" for="loginIdentifier">{{ t('auth_username') }} / {{ t('auth_email') }}</label>
+                    <input type="text" id="loginIdentifier" name="identifier" class="custom-input" value="{{ identifier if identifier else '' }}" required placeholder="e.g. farmer123">
+                </div>
+
+                <div class="mb-4">
+                    <label class="input-label" for="loginPassword">{{ t('auth_password') }}</label>
+                    <input type="password" id="loginPassword" name="password" class="custom-input" required placeholder="••••••••">
+                </div>
+
+                <button type="submit" class="btn-agri-primary w-100 py-3 mb-3">
+                    <span>🔓</span> {{ t('btn_login') }}
+                </button>
+            </form>
+
+            <div class="text-center mt-3 pt-3 border-top border-secondary border-opacity-25">
+                <span class="text-secondary small">{{ t('auth_no_account') }}</span>
+                <a href="{{ url_for('auth.register') }}" class="fw-bold text-success ms-1 small">
+                    {{ t('btn_register') }} &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
